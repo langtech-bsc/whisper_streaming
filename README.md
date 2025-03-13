@@ -7,7 +7,7 @@ sdk: gradio
 sdk_version: 5.14.0
 app_file: app.py
 pinned: false
-short_description: Whisper realtime streaming for long speech-to-text transcription and translation
+short_description: Whisper realtime streaming for transcription and translation
 ---
 
 # whisper_streaming

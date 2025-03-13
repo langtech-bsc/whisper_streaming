@@ -1,0 +1,6 @@
+librosa
+soundfile
+faster-whisper
+torch
+torchaudio
+spaces

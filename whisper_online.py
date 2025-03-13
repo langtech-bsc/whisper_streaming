@@ -12,6 +12,7 @@ import math
 
 logger = logging.getLogger(__name__)
 
+
 @lru_cache(10**6)
 def load_audio(fname):
     a, _ = librosa.load(fname, sr=16000, dtype=np.float32)
@@ -124,7 +125,7 @@ class FasterWhisperASR(ASRBase):
 
         # or run on CPU with INT8
         # tested: works, but slow, appx 10-times than cuda FP16
-#        model = WhisperModel(modelsize, device="cpu", compute_type="int8") #, download_root="faster-disk-cache-dir/")
+        #model = WhisperModel(modelsize, device="cpu", compute_type="int8") #, download_root="faster-disk-cache-dir/")
         return model
 
     def transcribe(self, audio, init_prompt=""):
@@ -832,12 +833,11 @@ def asr_factory(args, logfile=sys.stderr):
 
 def set_logging(args,logger,other="_server"):
     logging.basicConfig(#format='%(name)s 
-            format='%(levelname)s\t%(message)s')
+            format='%(asctime)s %(levelname)s\t%(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
     logger.setLevel(args.log_level)
     logging.getLogger("whisper_online"+other).setLevel(args.log_level)
 #    logging.getLogger("whisper_online_server").setLevel(args.log_level)
-
-
 
 if __name__ == "__main__":
 

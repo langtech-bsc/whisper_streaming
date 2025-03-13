@@ -2,6 +2,7 @@ from whisper_online import *
 import librosa
 import datetime
 import spaces
+import torch
 
 # src_lan = "en"  # source language
 # tgt_lan = "en"  # target language  -- same as source for ASR, "en" if translate task is used
@@ -16,7 +17,6 @@ print("(print) ASR model loaded")
 online = OnlineASRProcessor(asr)  # create processing object with default buffer trimming option
 logger.info("(logger) OnlineASRProcessor loaded")
 print("(print) OnlineASRProcessor loaded")
-
 
 # while audio_has_not_ended:   # processing loop:
 # 	a = # receive new audio chunk (and e.g. wait for min_chunk_size seconds first, ...)
@@ -37,8 +37,11 @@ import gradio as gr
 @spaces.GPU
 def transcribe(stream, new_chunk):
 
+    print(f"transcribe cuda available: {torch.cuda.is_available()}")
+
     sr, y = new_chunk
     print(f"transcribe() called: {sr}")
+
 
     # Convert to mono if stereo
     if y.ndim > 1:

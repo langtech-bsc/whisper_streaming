@@ -1,6 +1,7 @@
 from whisper_online import *
 import librosa
 import datetime
+import spaces
 
 # src_lan = "en"  # source language
 # tgt_lan = "en"  # target language  -- same as source for ASR, "en" if translate task is used
@@ -33,6 +34,7 @@ print("(print) OnlineASRProcessor loaded")
 
 import gradio as gr
 
+@spaces.GPU
 def transcribe(stream, new_chunk):
 
     sr, y = new_chunk

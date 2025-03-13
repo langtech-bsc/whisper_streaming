@@ -115,9 +115,17 @@ class FasterWhisperASR(ASRBase):
         else:
             raise ValueError("modelsize or model_dir parameter must be set")
 
+        import torch
+        device = "cpu"
+        compute_type = "int8"
+        if torch.cuda.is_available():
+            device = "cuda" 
+            compute_type = "int8_float16"
+        logger.info(f"Loading model {modelsize} on device={device} with compute_type = {compute_type}")
+        model = WhisperModel(modelsize, device=device, compute_type=compute_type)
 
         # this worked fast and reliably on NVIDIA L40
-        model = WhisperModel(model_size_or_path, device="cuda", compute_type="float16", download_root=cache_dir)
+        #model = WhisperModel(model_size_or_path, device="cuda", compute_type="float16", download_root=cache_dir)
 
         # or run on GPU with INT8
         # tested: the transcripts were different, probably worse than with FP16, and it was slightly (appx 20%) slower

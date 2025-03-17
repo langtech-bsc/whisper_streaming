@@ -847,17 +847,28 @@ def set_logging(args,logger,other="_server"):
     logging.getLogger("whisper_online"+other).setLevel(args.log_level)
 #    logging.getLogger("whisper_online_server").setLevel(args.log_level)
 
-if __name__ == "__main__":
+def output_transcript(o, now=None, start = 0, logfile = None):
+    # output format in stdout is like:
+    # 4186.3606 0 1720 Takhle to je
+    # - the first three words are:
+    #    - emission time from beginning of processing, in milliseconds
+    #    - beg and end timestamp of the text segment, as estimated by Whisper model. The timestamps are not accurate, but they're useful anyway
+    # - the next words: segment transcript
+    if now is None:
+        now = time.time()-start
+    if o[0] is not None:
+        if logfile:
+            print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),file=logfile,flush=True)
+        print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),flush=True)
+        output = "%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2])
+    else:
+        # No text, so no output
+        output = None
+        pass
 
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('audio_path', type=str, help="Filename of 16kHz mono channel wav, on which live streaming is simulated.")
-    add_shared_args(parser)
-    parser.add_argument('--start_at', type=float, default=0.0, help='Start processing audio at this time.')
-    parser.add_argument('--offline', action="store_true", default=False, help='Offline mode.')
-    parser.add_argument('--comp_unaware', action="store_true", default=False, help='Computationally unaware simulation.')
-    
-    args = parser.parse_args()
+    return output
+
+def whisper_online(args):
 
     # reset to store stderr to different file stream, e.g. open(os.devnull,"w")
     logfile = sys.stderr
@@ -893,21 +904,7 @@ if __name__ == "__main__":
     beg = args.start_at
     start = time.time()-beg
 
-    def output_transcript(o, now=None):
-        # output format in stdout is like:
-        # 4186.3606 0 1720 Takhle to je
-        # - the first three words are:
-        #    - emission time from beginning of processing, in milliseconds
-        #    - beg and end timestamp of the text segment, as estimated by Whisper model. The timestamps are not accurate, but they're useful anyway
-        # - the next words: segment transcript
-        if now is None:
-            now = time.time()-start
-        if o[0] is not None:
-            print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),file=logfile,flush=True)
-            print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),flush=True)
-        else:
-            # No text, so no output
-            pass
+    out_lines = []
 
     if args.offline: ## offline mode processing (for testing/debugging)
         a = load_audio(audio_path)
@@ -917,7 +914,9 @@ if __name__ == "__main__":
         except AssertionError as e:
             logger.error(f"assertion error: {repr(e)}")
         else:
-            output_transcript(o)
+            out = output_transcript(o, start = start, logfile = logfile)
+            if out != None:
+                out_lines.append(out)
         now = None
     elif args.comp_unaware:  # computational unaware mode 
         end = beg + min_chunk
@@ -930,7 +929,9 @@ if __name__ == "__main__":
                 logger.error(f"assertion error: {repr(e)}")
                 pass
             else:
-                output_transcript(o, now=end)
+                out = output_transcript(o, now=end, start = start, logfile = logfile)
+                if out != None:
+                    out_lines.append(out)
 
             logger.debug(f"## last processed {end:.2f}s")
 
@@ -962,7 +963,9 @@ if __name__ == "__main__":
                 logger.error(f"assertion error: {e}")
                 pass
             else:
-                output_transcript(o)
+                out = output_transcript(o, start = start, logfile = logfile)
+                if out != None:
+                    out_lines.append(out)
             now = time.time() - start
             logger.debug(f"## last processed {end:.2f} s, now is {now:.2f}, the latency is {now-end:.2f}")
 
@@ -971,4 +974,23 @@ if __name__ == "__main__":
         now = None
 
     o = online.finish()
-    output_transcript(o, now=now)
+    out = output_transcript(o, now=now, start = start, logfile = logfile)
+    if out != None:
+        out_lines.append(out)
+
+    return out_lines
+
+
+if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('audio_path', type=str, help="Filename of 16kHz mono channel wav, on which live streaming is simulated.")
+    add_shared_args(parser)
+    parser.add_argument('--start_at', type=float, default=0.0, help='Start processing audio at this time.')
+    parser.add_argument('--offline', action="store_true", default=False, help='Offline mode.')
+    parser.add_argument('--comp_unaware', action="store_true", default=False, help='Computationally unaware simulation.')
+    
+    args = parser.parse_args()
+    
+    out_lines = whisper_online(args)

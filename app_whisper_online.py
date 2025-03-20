@@ -102,8 +102,6 @@ import gradio as gr
 
 #     return stream, datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") # o
 
-
-
 @spaces.GPU
 def transcribe(mic=None, file=None):
 
@@ -116,7 +114,7 @@ def transcribe(mic=None, file=None):
     
     args = ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-    # start, beg = wo.asr_warmup(asr)
+    start, beg = wo.asr_warmup(asr)
 
 def create_app():
 

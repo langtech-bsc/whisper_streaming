@@ -27,8 +27,10 @@ class ARGS():
     
 args = ARGS()
 
-logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-start, beg = wo.asr_warmup(asr)
+print(torch.cuda.is_available())
+
+# logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+# start, beg = wo.asr_warmup(asr)
 
 
 #################################################################################################

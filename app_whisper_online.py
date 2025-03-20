@@ -29,14 +29,14 @@ args = ARGS()
 
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
-@spaces.GPU
-def prepare(args):
-    logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-    # start, beg = wo.asr_warmup(asr)
+# @spaces.GPU
+# def prepare(args):
+#     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+#     # start, beg = wo.asr_warmup(asr)
 
-    return logfile, audio_path, duration, online, min_chunk, asr, out_lines
+#     return logfile, audio_path, duration, online, min_chunk, asr, out_lines
 
-logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare()
+# logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare()
 
 #################################################################################################
 
@@ -116,7 +116,8 @@ def transcribe(mic=None, file=None):
     else:
         return "You must either provide a mic recording or a file"
     
-
+    logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+    # start, beg = wo.asr_warmup(asr)
 
 def create_app():
 

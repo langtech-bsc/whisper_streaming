@@ -7,6 +7,7 @@ import torch
 import sys
 
 class ARGS():
+    audio_path = None
     min_chunk_size = 1.0
     model = "large-v2"
     model_cache_dir = None

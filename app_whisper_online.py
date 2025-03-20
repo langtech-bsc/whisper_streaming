@@ -29,9 +29,14 @@ args = ARGS()
 
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
-logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-# start, beg = wo.asr_warmup(asr)
+@spaces.GPU
+def prepare(args):
+    logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+    # start, beg = wo.asr_warmup(asr)
 
+    return logfile, audio_path, duration, online, min_chunk, asr, out_lines
+
+logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare()
 
 #################################################################################################
 

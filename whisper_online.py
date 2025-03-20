@@ -925,6 +925,7 @@ def prepare(args):
         min_chunk = args.min_chunk_size
 
     audio_path = args.audio_path
+    duration = None
     if audio_path != None:
         SAMPLING_RATE = 16000
         duration = len(load_audio(audio_path))/SAMPLING_RATE

@@ -10,6 +10,8 @@ import io
 import soundfile as sf
 import math
 
+import pprint
+
 logger = logging.getLogger(__name__)
 
 
@@ -857,10 +859,11 @@ def output_transcript(o, now=None, start = 0, logfile = None):
     if now is None:
         now = time.time()-start
     if o[0] is not None:
-        if logfile:
-            print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),file=logfile,flush=True)
-        print("%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2]),flush=True)
         output = "%1.4f %1.0f %1.0f %s" % (now*1000, o[0]*1000,o[1]*1000,o[2])
+        if logfile:
+            print(output,file=logfile,flush=True)
+        print(output,flush=True)
+        
     else:
         # No text, so no output
         output = None
@@ -868,7 +871,38 @@ def output_transcript(o, now=None, start = 0, logfile = None):
 
     return output
 
-def whisper_online(args):
+def online_loop(online, start, end, audio, logfile, out_lines):
+
+    online.insert_audio_chunk(audio)
+
+    try:
+        o = online.process_iter()
+    except AssertionError as e:
+        logger.error(f"assertion error: {e}")
+        pass
+    else:
+        out = output_transcript(o, start = start, logfile = logfile)
+        # if out != None:
+        #     out_lines.append(out)
+    now = time.time() - start
+    logger.debug(f"## last processed {end:.2f} s, now is {now:.2f}, the latency is {now-end:.2f}")
+    if out != None:
+        fields = out.split(" ")
+        start_time = float(fields[1])
+        end_time = float(fields[2])
+        text = " ".join(fields[3:])
+        out = {"start_time": start_time, "end_time": end_time, "text": text}
+        logger.info(out) 
+        out_lines.append(out)
+
+    return end, out_lines
+
+def print_args(args):
+
+    for arg in vars(args):
+        logger.info(f"{arg}: {getattr(args, arg)}")
+
+def prepare(args):
 
     # reset to store stderr to different file stream, e.g. open(os.devnull,"w")
     logfile = sys.stderr
@@ -882,12 +916,7 @@ def whisper_online(args):
 #                            level=getattr(logging, args.log_level))
 
     set_logging(args,logger)
-
-    audio_path = args.audio_path
-
-    SAMPLING_RATE = 16000
-    duration = len(load_audio(audio_path))/SAMPLING_RATE
-    logger.info("Audio duration is: %2.2f seconds" % duration)
+    print_args(args)
 
     asr, online = asr_factory(args, logfile=logfile)
     if args.vac:
@@ -895,8 +924,28 @@ def whisper_online(args):
     else:
         min_chunk = args.min_chunk_size
 
+    audio_path = args.audio_path
+
+    out_lines = []
+
+    SAMPLING_RATE = 16000
+
+    duration = len(load_audio(audio_path))/SAMPLING_RATE
+    logger.info("Audio duration is: %2.2f seconds" % duration)
+
+    return logfile, audio_path, duration, online, min_chunk, asr, out_lines
+
+def asr_warmup(asr):
+
+    logger.info(f"Warming up ASR model with random audio")
+
     # load the audio into the LRU cache before we start the timer
-    a = load_audio_chunk(audio_path,0,1)
+    # a = load_audio_chunk(audio_path,0,1)
+    # import torch
+    import numpy as np
+    sr = 16000
+    # a = torch.rand(1, sr * 1)
+    a = np.random.rand(sr * 1,)
 
     # warm up the ASR because the very first transcribe takes much more time than the other
     asr.transcribe(a)
@@ -904,7 +953,53 @@ def whisper_online(args):
     beg = args.start_at
     start = time.time()-beg
 
-    out_lines = []
+    return start, beg
+
+
+def whisper_online(args):
+
+#     # reset to store stderr to different file stream, e.g. open(os.devnull,"w")
+#     logfile = sys.stderr
+
+#     if args.offline and args.comp_unaware:
+#         logger.error("No or one option from --offline and --comp_unaware are available, not both. Exiting.")
+#         sys.exit(1)
+
+# #    if args.log_level:
+# #        logging.basicConfig(format='whisper-%(levelname)s:%(name)s: %(message)s',
+# #                            level=getattr(logging, args.log_level))
+
+#     set_logging(args,logger)
+#     print_args(args)
+
+#     audio_path = args.audio_path
+
+#     SAMPLING_RATE = 16000
+#     duration = len(load_audio(audio_path))/SAMPLING_RATE
+#     logger.info("Audio duration is: %2.2f seconds" % duration)
+
+#     asr, online = asr_factory(args, logfile=logfile)
+#     if args.vac:
+#         min_chunk = args.vac_chunk_size
+#     else:
+#         min_chunk = args.min_chunk_size
+
+#     # load the audio into the LRU cache before we start the timer
+#     a = load_audio_chunk(audio_path,0,1)
+
+#     # warm up the ASR because the very first transcribe takes much more time than the other
+#     asr.transcribe(a)
+
+#     beg = args.start_at
+#     start = time.time()-beg
+
+#     out_lines = []
+
+    logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare(args)
+
+    start, beg = asr_warmup(asr)
+
+    # exit()
 
     if args.offline: ## offline mode processing (for testing/debugging)
         a = load_audio(audio_path)
@@ -949,25 +1044,34 @@ def whisper_online(args):
     else: # online = simultaneous mode
         end = 0
         while True:
+            # now = time.time() - start
+            # if now < end+min_chunk:
+            #     time.sleep(min_chunk+end-now)
+            # end = time.time() - start
+            # a = load_audio_chunk(audio_path,beg,end)
+            # beg = end
+            # online.insert_audio_chunk(a)
+
+            # try:
+            #     o = online.process_iter()
+            # except AssertionError as e:
+            #     logger.error(f"assertion error: {e}")
+            #     pass
+            # else:
+            #     out = output_transcript(o, start = start, logfile = logfile)
+            #     if out != None:
+            #         out_lines.append(out)
+            # now = time.time() - start
+            # logger.debug(f"## last processed {end:.2f} s, now is {now:.2f}, the latency is {now-end:.2f}")
+
             now = time.time() - start
             if now < end+min_chunk:
                 time.sleep(min_chunk+end-now)
             end = time.time() - start
-            a = load_audio_chunk(audio_path,beg,end)
+            audio = load_audio_chunk(audio_path,beg,end)
             beg = end
-            online.insert_audio_chunk(a)
 
-            try:
-                o = online.process_iter()
-            except AssertionError as e:
-                logger.error(f"assertion error: {e}")
-                pass
-            else:
-                out = output_transcript(o, start = start, logfile = logfile)
-                if out != None:
-                    out_lines.append(out)
-            now = time.time() - start
-            logger.debug(f"## last processed {end:.2f} s, now is {now:.2f}, the latency is {now-end:.2f}")
+            end, out_lines = online_loop(online, start, end, audio, logfile, out_lines)
 
             if end >= duration:
                 break
@@ -975,11 +1079,27 @@ def whisper_online(args):
 
     o = online.finish()
     out = output_transcript(o, now=now, start = start, logfile = logfile)
+    # if out != None:
+        # out_lines.append(out)
     if out != None:
+        fields = out.split(" ")
+        start_time = float(fields[1])
+        end_time = float(fields[2])
+        text = " ".join(fields[3:])
+        out = {"start_time": start_time, "end_time": end_time, "text": text}
+        logger.info(out) 
         out_lines.append(out)
+
+    # logger.info(out_lines)
 
     return out_lines
 
+def print_out_lines(out_lines: list):
+
+    logger.info(f"Showing {len(out_lines)} transcribed lines")
+
+    for line in out_lines:
+        logger.info(line)
 
 if __name__ == "__main__":
 
@@ -994,3 +1114,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     out_lines = whisper_online(args)
+
+    print_out_lines(out_lines)

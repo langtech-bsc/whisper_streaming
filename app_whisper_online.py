@@ -25,8 +25,6 @@ class ARGS():
     offline = False
     comp_unaware = False    
     
-args = ARGS()
-
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
 # @spaces.GPU
@@ -116,6 +114,7 @@ def transcribe(mic=None, file=None):
     else:
         return "You must either provide a mic recording or a file"
     
+    args = ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     # start, beg = wo.asr_warmup(asr)
 

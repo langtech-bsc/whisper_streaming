@@ -104,11 +104,9 @@ import gradio as gr
 #     return stream, datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") # o
 
 @spaces.GPU
-def transcribe(mic=None, file=None):
+def transcribe(file=None):
 
-    if mic is not None:
-        audio = mic
-    elif file is not None:
+    if file is not None:
         audio = file
         print(f"processing audio file: {audio}")
     else:
@@ -140,8 +138,6 @@ def transcribe(mic=None, file=None):
 
     o = online.finish()
     out = wo.output_transcript(o, now=now, start = start, logfile = logfile)
-    # if out != None:
-        # out_lines.append(out)
     if out != None:
         fields = out.split(" ")
         start_time = float(fields[1])
@@ -150,6 +146,8 @@ def transcribe(mic=None, file=None):
         out = {"start_time": start_time, "end_time": end_time, "text": text}
         print(out) 
         out_lines.append(out)
+
+    return "\n".join(out_lines)
 
 def create_app():
 
@@ -169,7 +167,6 @@ def create_app():
         gr.Interface(
             fn=transcribe,
             inputs=[
-                gr.Audio(sources="microphone", type="filepath"),
                 gr.Audio(sources="upload", type="filepath"),
             ],
             outputs="text",

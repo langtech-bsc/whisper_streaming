@@ -110,29 +110,46 @@ def transcribe(mic=None, file=None):
         audio = mic
     elif file is not None:
         audio = file
+        print(f"processing audio file: {audio}")
     else:
         return "You must either provide a mic recording or a file"
-    
-    print(audio)
 
-    # args = ARGS()
-    # logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-    # start, beg = wo.asr_warmup(asr)
+    args = ARGS()
+    logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+    wo.asr_warmup(asr)
 
-    # end = 0
-    # while True:
-    #     now = time.time() - start
-    #     if now < end+min_chunk:
-    #         time.sleep(min_chunk+end-now)
-    #     end = time.time() - start
-    #     audio = wo.load_audio_chunk(audio_path,beg,end)
-    #     beg = end
+    beg = args.start_at
+    start = time.time()-beg
+    end = 0
+    while True:
+        now = time.time() - start
+        if now < end+min_chunk:
+            time.sleep(min_chunk+end-now)
+        end = time.time() - start
+        audio = wo.load_audio_chunk(audio_path,beg,end)
+        beg = end
 
-    #     end, out_lines = wo.online_loop(online, start, end, audio, logfile, out_lines)
+        len_before = len(out_lines)
+        end, out_lines = wo.online_loop(online, start, end, audio, logfile, out_lines)
+        if len(out_lines) != len_before:
+            print(out_lines[-1])
 
-    #     if end >= duration:
-    #         break
-    # now = None
+        if end >= duration:
+            break
+    now = None
+
+    o = online.finish()
+    out = wo.output_transcript(o, now=now, start = start, logfile = logfile)
+    # if out != None:
+        # out_lines.append(out)
+    if out != None:
+        fields = out.split(" ")
+        start_time = float(fields[1])
+        end_time = float(fields[2])
+        text = " ".join(fields[3:])
+        out = {"start_time": start_time, "end_time": end_time, "text": text}
+        print(out) 
+        out_lines.append(out)
 
 def create_app():
 

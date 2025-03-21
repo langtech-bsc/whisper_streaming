@@ -110,29 +110,30 @@ def transcribe(mic=None, file=None):
         audio = mic
     elif file is not None:
         audio = file
+        print(f"processing audio file: {audio}")
     else:
         return "You must either provide a mic recording or a file"
+
+    args = ARGS()
+    logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
+    wo.asr_warmup(asr)
     
-    print(audio)
+    beg = args.start_at
+    start = time.time()-beg
+    end = 0
+    while True:
+        now = time.time() - start
+        if now < end+min_chunk:
+            time.sleep(min_chunk+end-now)
+        end = time.time() - start
+        audio = wo.load_audio_chunk(audio_path,beg,end)
+        beg = end
 
-    # args = ARGS()
-    # logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
-    # start, beg = wo.asr_warmup(asr)
+        end, out_lines = wo.online_loop(online, start, end, audio, logfile, out_lines)
 
-    # end = 0
-    # while True:
-    #     now = time.time() - start
-    #     if now < end+min_chunk:
-    #         time.sleep(min_chunk+end-now)
-    #     end = time.time() - start
-    #     audio = wo.load_audio_chunk(audio_path,beg,end)
-    #     beg = end
-
-    #     end, out_lines = wo.online_loop(online, start, end, audio, logfile, out_lines)
-
-    #     if end >= duration:
-    #         break
-    # now = None
+        if end >= duration:
+            break
+    now = None
 
 def create_app():
 

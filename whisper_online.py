@@ -950,10 +950,10 @@ def asr_warmup(asr):
     # warm up the ASR because the very first transcribe takes much more time than the other
     asr.transcribe(a)
 
-    beg = args.start_at
-    start = time.time()-beg
+    # beg = args.start_at
+    # start = time.time()-beg
 
-    return start, beg
+    # return start, beg
 
 
 def whisper_online(args):
@@ -996,10 +996,10 @@ def whisper_online(args):
 #     out_lines = []
 
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare(args)
+    asr_warmup(asr)
 
-    start, beg = asr_warmup(asr)
-
-    # exit()
+    beg = args.start_at
+    start = time.time()-beg
 
     if args.offline: ## offline mode processing (for testing/debugging)
         a = load_audio(audio_path)

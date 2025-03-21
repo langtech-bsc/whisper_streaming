@@ -171,6 +171,7 @@ def create_app():
             ],
             outputs="text",
             live=True,
+            enable_queue=True
         )
 
     return demo

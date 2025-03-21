@@ -117,7 +117,7 @@ def transcribe(mic=None, file=None):
     args = ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     wo.asr_warmup(asr)
-    
+
     beg = args.start_at
     start = time.time()-beg
     end = 0
@@ -129,11 +129,27 @@ def transcribe(mic=None, file=None):
         audio = wo.load_audio_chunk(audio_path,beg,end)
         beg = end
 
+        len_before = len(out_lines)
         end, out_lines = wo.online_loop(online, start, end, audio, logfile, out_lines)
+        if len(out_lines) != len_before:
+            print(out_lines[-1])
 
         if end >= duration:
             break
     now = None
+
+    o = online.finish()
+    out = wo.output_transcript(o, now=now, start = start, logfile = logfile)
+    # if out != None:
+        # out_lines.append(out)
+    if out != None:
+        fields = out.split(" ")
+        start_time = float(fields[1])
+        end_time = float(fields[2])
+        text = " ".join(fields[3:])
+        out = {"start_time": start_time, "end_time": end_time, "text": text}
+        print(out) 
+        out_lines.append(out)
 
 def create_app():
 

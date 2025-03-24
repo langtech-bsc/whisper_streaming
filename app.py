@@ -13,7 +13,7 @@ def prepare():
     _, _, _, _, _, asr, _ = wo.prepare(args)
     wo.asr_warmup(asr)
 
-prepare()
+#prepare()
 
 def main():
 

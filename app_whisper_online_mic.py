@@ -6,25 +6,7 @@ import spaces
 import torch
 import sys
 import time
-
-class ARGS():
-    audio_path = None
-    min_chunk_size = 1.0
-    model = "large-v2"
-    model_cache_dir = None
-    model_dir = None
-    lan = "es"
-    task = "transcribe"
-    backend = "faster-whisper"
-    vac = False
-    vac_chunk_size = 0.04
-    vad = False
-    buffer_trimming = "segment"
-    buffer_trimming_sec = 15
-    log_level = "DEBUG"
-    start_at = 0.0
-    offline = False
-    comp_unaware = False    
+import app_utils 
     
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -104,17 +86,14 @@ import gradio as gr
 #     return stream, datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") # o
 
 @spaces.GPU
-def transcribe(mic=None, file=None):
+def transcribe(mic=None):
 
     if mic is not None:
         audio = mic
-    elif file is not None:
-        audio = file
-        print(f"processing audio file: {audio}")
     else:
         return "You must either provide a mic recording or a file"
 
-    args = ARGS()
+    args = app_utils.ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     wo.asr_warmup(asr)
 
@@ -170,7 +149,6 @@ def create_app():
             fn=transcribe,
             inputs=[
                 gr.Audio(sources="microphone", type="filepath"),
-                gr.Audio(sources="upload", type="filepath"),
             ],
             outputs="text",
             live=True,

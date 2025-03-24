@@ -6,25 +6,8 @@ import spaces
 import torch
 import sys
 import time
+import app_utils
 
-class ARGS():
-    audio_path = None
-    min_chunk_size = 1.0
-    model = "large-v2"
-    model_cache_dir = None
-    model_dir = None
-    lan = "es"
-    task = "transcribe"
-    backend = "faster-whisper"
-    vac = False
-    vac_chunk_size = 0.04
-    vad = False
-    buffer_trimming = "segment"
-    buffer_trimming_sec = 15
-    log_level = "DEBUG"
-    start_at = 0.0
-    offline = False
-    comp_unaware = False    
     
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -112,7 +95,7 @@ def transcribe(file=None):
     else:
         return "You must either provide a mic recording or a file"
 
-    args = ARGS()
+    args = app_utils.ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     wo.asr_warmup(asr)
 
@@ -171,7 +154,7 @@ def create_app():
             ],
             outputs="text",
             live=True,
-            enable_queue=True
+            # enable_queue=True
         )
 
     return demo

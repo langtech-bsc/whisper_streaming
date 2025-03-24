@@ -1,7 +1,7 @@
 import spaces
 import gradio as gr
-import app_whisper_online_mic as wo
-import app_whisper_online as wo_mic
+import app_whisper_online_mic as wo_mic
+import app_whisper_online as wo
 import app_utils
 
 @spaces.GPU

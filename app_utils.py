@@ -2,7 +2,7 @@
 class ARGS():
     audio_path = None
     min_chunk_size = 1.0
-    model = "large-v2"
+    model = "large-v1"
     model_cache_dir = None
     model_dir = None
     lan = "es"

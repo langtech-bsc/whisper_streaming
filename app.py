@@ -1,7 +1,8 @@
 import spaces
 import gradio as gr
-import app_whisper_online_mic as wo_mic
-import app_whisper_online as wo
+import whisper_online as wo
+import app_whisper_online_mic
+import app_whisper_online
 import app_utils
 
 @spaces.GPU
@@ -17,7 +18,7 @@ prepare()
 def main():
 
     title="Speech 2 speech translation project demos\nwith whisper_streaming"
-    interface_list = [wo_mic.create_app(), wo.create_app()]
+    interface_list = [app_whisper_online_mic.create_app(), app_whisper_online.create_app()]
     tabs_names = ["Real Time ASR demo", "Simulation of Real Time ASR demo"]
 
     demo = gr.TabbedInterface(interface_list, tabs_names, title = title)

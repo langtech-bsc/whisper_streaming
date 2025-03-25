@@ -5,6 +5,15 @@ import app_whisper_online_mic
 import app_whisper_online
 import app_utils
 
+# from: https://huggingface.co/ericmattmann/whisperX-endpoint/commit/2ab62e6332db51ccba1d6c1e1c1b46a8ca2fcbd0
+import nvidia.cublas.lib
+import nvidia.cudnn.lib
+import os
+
+os.environ["LD_LIBRARY_PATH"] = (
+    os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__)
+)
+
 @spaces.GPU
 def prepare():
     print("app.py::prepare(): warmup ASR")

@@ -7,6 +7,7 @@ import torch
 import sys
 import time
 import app_utils
+import os
 
     
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
@@ -94,6 +95,12 @@ def transcribe(file=None):
         print(f"processing audio file: {audio}")
     else:
         return "You must either provide a mic recording or a file"
+
+    print(f"app_whisper_online.py - transcribe - torch.cuda.is_available(): {torch.cuda.is_available()}")
+    if 'LD_LIBRARY_PATH' in os.environ:
+        print(f"app_whisper_online.py - transcribe - LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+    else:
+        print(f"app_whisper_online.py - transcribe - LD_LIBRARY_PATH: not found")
 
     args = app_utils.ARGS()
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)

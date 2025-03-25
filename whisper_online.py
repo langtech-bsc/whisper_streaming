@@ -799,6 +799,14 @@ def asr_factory(args, logfile=sys.stderr):
         logger.debug("Using OpenAI API.")
         asr = OpenaiApiASR(lan=args.lan)
     else:
+
+        import os, torch
+        logger.info(f"whisper_online.py - asr_factory - torch.cuda.is_available(): {torch.cuda.is_available()}")
+        if 'LD_LIBRARY_PATH' in os.environ:
+            logger.info(f"whisper_online.py - asr_factory - LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+        else:
+            logger.info(f"whisper_online.py - asr_factory - LD_LIBRARY_PATH: not found")
+
         if backend == "faster-whisper":
             asr_cls = FasterWhisperASR
         elif backend == "mlx-whisper":
@@ -938,6 +946,13 @@ def prepare(args):
 def asr_warmup(asr):
 
     logger.info(f"Warming up ASR model with random audio")
+
+    import os, torch
+    logger.info(f"whisper_online.py - asr_warmup - torch.cuda.is_available(): {torch.cuda.is_available()}")
+    if 'LD_LIBRARY_PATH' in os.environ:
+        logger.info(f"whisper_online.py - asr_warmup - LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+    else:
+        logger.info(f"whisper_online.py - asr_warmup - LD_LIBRARY_PATH: not found")
 
     # load the audio into the LRU cache before we start the timer
     # a = load_audio_chunk(audio_path,0,1)

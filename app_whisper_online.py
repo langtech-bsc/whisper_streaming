@@ -102,10 +102,9 @@ def transcribe(file=None):
         print(f"app_whisper_online.py - transcribe - LD_LIBRARY_PATH: not found")
 
     args = app_utils.ARGS()
+    args.audio_path = audio
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     wo.asr_warmup(asr)
-
-    audio_path = f"{audio}"
 
     beg = args.start_at
     start = time.time()-beg

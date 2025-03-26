@@ -22,10 +22,10 @@ def prepare():
     _, _, _, _, _, asr, _ = wo.prepare(args)
     wo.asr_warmup(asr)
 
-prepare()
-
 def main():
 
+    prepare()
+    
     title="Speech 2 speech translation project demos\nwith whisper_streaming"
     interface_list = [app_whisper_online_mic.create_app(), app_whisper_online.create_app()]
     tabs_names = ["Real Time ASR demo", "Simulation of Real Time ASR demo"]

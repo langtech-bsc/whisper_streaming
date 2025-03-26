@@ -1,14 +1,13 @@
 # from whisper_online import *
+import spaces
 import whisper_online as wo
 import librosa
 import datetime
-import spaces
 import torch
 import sys
 import time
 import app_utils
 import os
-
     
 print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
 
@@ -106,6 +105,8 @@ def transcribe(file=None):
     logfile, audio_path, duration, online, min_chunk, asr, out_lines = wo.prepare(args)
     wo.asr_warmup(asr)
 
+    audio_path = f"{audio}"
+
     beg = args.start_at
     start = time.time()-beg
     end = 0
@@ -170,7 +171,6 @@ def main():
     
     app = create_app()
     app.launch(debug=True)
-
     
 if __name__ == "__main__":
     main()

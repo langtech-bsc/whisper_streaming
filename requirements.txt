@@ -4,6 +4,3 @@ faster-whisper
 torch
 torchaudio
 spaces
-ctranslate2==4.4.0
-nvidia-cublas-cu11
-nvidia-cudnn-cu11

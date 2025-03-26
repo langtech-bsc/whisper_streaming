@@ -14,7 +14,7 @@ os.environ["LD_LIBRARY_PATH"] = (
     os.path.dirname(nvidia.cublas.lib.__file__) + ":" + os.path.dirname(nvidia.cudnn.lib.__file__)
 )
 
-@spaces.GPU(duration=60 * 3)
+@spaces.GPU(duration=60 * 2)
 def prepare():
     print("app.py::prepare(): warmup ASR")
 

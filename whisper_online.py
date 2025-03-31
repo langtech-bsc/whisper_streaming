@@ -14,6 +14,16 @@ import pprint
 
 logger = logging.getLogger(__name__)
 
+import os
+
+# os.environ["HF_HOME"]="/gpfs/projects/bsc88/apps/marti/projects/whisper_streaming/tmp/cache/huggingface"
+# os.environ["HF_HUB_CACHE"]="/gpfs/projects/bsc88/apps/marti/projects/whisper_streaming/tmp/cache/huggingface/hub"
+# os.environ["XDG_CACHE_HOME"]="/gpfs/projects/bsc88/apps/marti/projects/whisper_streaming/tmp/cache/huggingface"
+# os.environ["LIBROSA_CACHE_DIR"]="/gpfs/projects/bsc88/apps/marti/projects/whisper_streaming/tmp/librosa_cache"
+# os.environ["NUMBA_CACHE_DIR"]="/gpfs/projects/bsc88/apps/marti/projects/whisper_streaming/tmp/numba"
+# os.environ["HF_HUB_ETAG_TIMEOUT"]="600"
+# os.environ["HF_HUB_DOWNLOAD_TIMEOUT"]="600"
+
 
 @lru_cache(10**6)
 def load_audio(fname):
@@ -123,7 +133,7 @@ class FasterWhisperASR(ASRBase):
         if torch.cuda.is_available():
             device = "cuda" 
             compute_type = "int8_float16"
-        logger.info(f"Loading model {modelsize} on device={device} with compute_type = {compute_type}")
+        logger.info(f"FasterWhisperASR - load_model() - Loading model {modelsize} on device={device} with compute_type={compute_type}")
         model = WhisperModel(modelsize, device=device, compute_type=compute_type)
 
         # this worked fast and reliably on NVIDIA L40
@@ -777,7 +787,7 @@ def add_shared_args(parser):
     parser: argparse.ArgumentParser object
     """
     parser.add_argument('--min-chunk-size', type=float, default=1.0, help='Minimum audio chunk size in seconds. It waits up to this time to do processing. If the processing takes shorter time, it waits, otherwise it processes the whole segment that was received by this time.')
-    parser.add_argument('--model', type=str, default='large-v2', choices="tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo".split(","),help="Name size of the Whisper model to use (default: large-v2). The model is automatically downloaded from the model hub if not present in model cache dir.")
+    parser.add_argument('--model', type=str, default='large-v2', choices="projecte-aina/faster-whisper-large-v3-ca-3catparla,tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large-v3,large,large-v3-turbo".split(","),help="Name size of the Whisper model to use (default: large-v2). The model is automatically downloaded from the model hub if not present in model cache dir.")
     parser.add_argument('--model_cache_dir', type=str, default=None, help="Overriding the default model cache dir where models downloaded from the hub are saved")
     parser.add_argument('--model_dir', type=str, default=None, help="Dir where Whisper model.bin and other files are saved. This option overrides --model and --model_cache_dir parameter.")
     parser.add_argument('--lan', '--language', type=str, default='auto', help="Source language code, e.g. en,de,cs, or 'auto' for language detection.")
@@ -817,7 +827,7 @@ def asr_factory(args, logfile=sys.stderr):
         # Only for FasterWhisperASR and WhisperTimestampedASR
         size = args.model
         t = time.time()
-        logger.info(f"Loading Whisper {size} model for {args.lan}...")
+        logger.info(f"Loading Whisper {size} model for {args.lan} in {args.model_cache_dir}")
         asr = asr_cls(modelsize=size, lan=args.lan, cache_dir=args.model_cache_dir, model_dir=args.model_dir)
         e = time.time()
         logger.info(f"done. It took {round(e-t,2)} seconds.")
@@ -926,22 +936,50 @@ def prepare(args):
     set_logging(args,logger)
     print_args(args)
 
+    logger.info(os.environ["HF_HOME"])
+    logger.info(os.environ["HF_HUB_CACHE"])
+    logger.info(os.environ["XDG_CACHE_HOME"])
+    logger.info(os.environ["LIBROSA_CACHE_DIR"])
+    logger.info(os.environ["NUMBA_CACHE_DIR"])
+    logger.info(os.environ["HF_HUB_ETAG_TIMEOUT"])
+    logger.info(os.environ["HF_HUB_DOWNLOAD_TIMEOUT"])
+
     asr, online = asr_factory(args, logfile=logfile)
+    # if args.vac:
+    #     min_chunk = args.vac_chunk_size
+    # else:
+    #     min_chunk = args.min_chunk_size
+
+    # audio_path = args.audio_path
+    # duration = None
+    # if audio_path != None:
+    #     SAMPLING_RATE = 16000
+    #     duration = len(load_audio(audio_path))/SAMPLING_RATE
+    #     logger.info("Audio duration is: %2.2f seconds" % duration)
+
+    # out_lines = []
+
+    #return logfile, audio_path, duration, online, min_chunk, asr, out_lines
+    return logfile, online, asr
+
+def get_min_chunk(args):
+
     if args.vac:
         min_chunk = args.vac_chunk_size
     else:
         min_chunk = args.min_chunk_size
 
-    audio_path = args.audio_path
+    return min_chunk
+
+def get_audio_duration(audio_path):
+
     duration = None
     if audio_path != None:
         SAMPLING_RATE = 16000
         duration = len(load_audio(audio_path))/SAMPLING_RATE
         logger.info("Audio duration is: %2.2f seconds" % duration)
 
-    out_lines = []
-
-    return logfile, audio_path, duration, online, min_chunk, asr, out_lines
+    return duration
 
 def asr_warmup(asr):
 
@@ -1010,7 +1048,14 @@ def whisper_online(args):
 
 #     out_lines = []
 
-    logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare(args)
+    #logfile, audio_path, duration, online, min_chunk, asr, out_lines = prepare(args)
+    #
+    out_lines = []
+    logfile, online, asr = prepare(args)
+    audio_path = args.audio_path
+    min_chunk = get_min_chunk(args)
+    duration = get_audio_duration(audio_path)
+    #
     asr_warmup(asr)
 
     beg = args.start_at

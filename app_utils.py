@@ -2,10 +2,10 @@
 class ARGS():
     audio_path = None
     min_chunk_size = 1.0
-    model = "large-v1"
+    model = "projecte-aina/faster-whisper-large-v3-ca-3catparla" # "large-v2"
     model_cache_dir = None
     model_dir = None
-    lan = "es"
+    lan = "ca"
     task = "transcribe"
     backend = "faster-whisper"
     vac = False
